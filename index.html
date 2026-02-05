@@ -356,7 +356,7 @@
                     radioInput.name = questionName;
                     radioInput.id = radioId;
                     radioInput.value = i;
-                    if (i === 0) radioInput.checked = true;
+                    // if (i === 0) radioInput.checked = true; // Removido pré-seleção
                     
                     const radioLabel = createElement('label', [], i.toString());
                     radioLabel.htmlFor = radioId;
@@ -382,7 +382,7 @@
             radioNoInput.name = questionName;
             radioNoInput.id = radioNoId;
             radioNoInput.value = '0';
-            radioNoInput.checked = true;
+            // radioNoInput.checked = true; // Removido pré-seleção
             
             const radioNoLabel = createElement('label', [], 'Não');
             radioNoLabel.htmlFor = radioNoId;
@@ -530,22 +530,65 @@
 
     function validateStep(step) {
         const currentStepEl = document.getElementById(`step-${step}`);
-        const inputs = currentStepEl.querySelectorAll('input[required]');
         let isValid = true;
 
+        // 1. Validar campos required (inputs de texto, etc)
+        const inputs = currentStepEl.querySelectorAll('input[required]');
         inputs.forEach(input => {
             if (!input.value) {
                 isValid = false;
                 input.classList.add('border-red-500', 'ring-1', 'ring-red-500');
-                // Remover aviso visual ao digitar
                 input.addEventListener('input', () => {
                     input.classList.remove('border-red-500', 'ring-1', 'ring-red-500');
                 }, { once: true });
             }
         });
 
+        // 2. Validar Radio Buttons (Perguntas)
+        const radios = currentStepEl.querySelectorAll('input[type="radio"]');
+        if (radios.length > 0) {
+            const radioGroups = {};
+            // Agrupar por nome
+            radios.forEach(radio => {
+                if (!radioGroups[radio.name]) {
+                    radioGroups[radio.name] = [];
+                }
+                radioGroups[radio.name].push(radio);
+            });
+
+            // Verificar cada grupo
+            for (const name in radioGroups) {
+                const group = radioGroups[name];
+                const isChecked = group.some(radio => radio.checked);
+                
+                if (!isChecked) {
+                    isValid = false;
+                    // O wrapper da pergunta é o avô do input (input -> div.radio-group -> div.wrapper)
+                    const questionWrapper = group[0].parentElement.parentElement;
+                    
+                    if (questionWrapper) {
+                        // Adicionar feedback visual de erro
+                        questionWrapper.classList.add('bg-red-50', 'border-red-300'); // Estilo mais sutil para o bloco
+                        
+                        // Remover feedback ao selecionar
+                        group.forEach(radio => {
+                            radio.addEventListener('change', () => {
+                                questionWrapper.classList.remove('bg-red-50', 'border-red-300');
+                            }, { once: true });
+                        });
+                    }
+                }
+            }
+        }
+
         if (!isValid) {
-            alert('Por favor, preencha todos os campos obrigatórios.');
+            alert('Por favor, responda todas as perguntas obrigatórias antes de prosseguir.');
+            
+            // Rolar para o primeiro erro
+            const firstError = currentStepEl.querySelector('.border-red-500, .bg-red-50');
+            if (firstError) {
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
         }
 
         return isValid;
