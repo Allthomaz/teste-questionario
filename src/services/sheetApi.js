@@ -3,7 +3,7 @@
  */
 
 // ATENÇÃO: Substitua esta URL pela URL gerada na sua Implantação do Google Apps Script
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwm1hWoaDIsZBfWdm7tnr5UlAhduvQdh4UQS844ghWWJBcHoWBowWMOzu2TR41SaF8kJQ/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwdXhbxJFabslfdbc9-MiE3UiKmnQwnRomh62WIUDkGSOlvHoBT3eZW742hYM0shbuJFg/exec';
 
 /**
  * Envia os dados do paciente para a planilha
@@ -11,28 +11,27 @@ const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwm1hWoaDIsZB
  * @returns {Promise<boolean>} - True se sucesso, False se erro
  */
 export async function sendDataToSheet(patientData) {
-    if (GOOGLE_SCRIPT_URL === 'SUA_URL_DO_GOOGLE_APPS_SCRIPT_AQUI') {
-        console.warn('URL da API do Google Sheets não configurada. Os dados não serão salvos na nuvem.');
+    if (GOOGLE_SCRIPT_URL.includes('SUA_URL')) {
+        console.warn('URL da API não configurada.');
         return false;
     }
 
     try {
-        // Usamos mode: 'no-cors' para evitar problemas de CORS com Google Apps Script
-        // Isso significa que a resposta será "opaque" (não legível), mas o envio funciona.
+        // Método "Simples e Eficaz": Enviar como texto puro sem keepalive
+        // keepalive pode causar problemas em alguns cenários com no-cors
         const response = await fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST',
-            mode: 'no-cors', 
+            mode: 'no-cors',
             headers: {
-                'Content-Type': 'text/plain;charset=utf-8', // Importante para evitar preflight OPTIONS
+                'Content-Type': 'text/plain;charset=utf-8',
             },
-            body: JSON.stringify(patientData),
-            keepalive: true // Garante o envio mesmo se a aba for fechada
+            body: JSON.stringify(patientData)
         });
 
-        console.log('Dados enviados para a planilha com sucesso (modo no-cors).');
+        console.log('Enviado para planilha. Verifique lá.');
         return true;
     } catch (error) {
-        console.error('Erro ao enviar dados para a planilha:', error);
+        console.error('Falha no envio:', error);
         return false;
     }
 }

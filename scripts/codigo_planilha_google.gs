@@ -1,56 +1,76 @@
-// --- COPIE ESTE CÓDIGO PARA O APPS SCRIPT DA SUA PLANILHA ---
+// --- COPIE TODO ESTE CÓDIGO E SUBSTITUA O ANTERIOR NO APPS SCRIPT ---
 
 function doPost(e) {
+  var lock = LockService.getScriptLock();
+  lock.tryLock(10000); // Aguarda até 10s para evitar conflitos de escrita simultânea
+
   try {
-    // 1. Obtém a aba ativa da planilha
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
     
-    // 2. Recebe os dados do site
-    var rawData = e.postData.contents;
-    var data = JSON.parse(rawData);
+    // DEBUG: Se quiser ver o que está chegando, descomente a linha abaixo (cria logs na planilha)
+    // sheet.appendRow(["DEBUG", JSON.stringify(e)]);
+
+    var data;
     
-    // 3. Verifica se o paciente já existe (pelo Email na Coluna 3 / C)
-    // Estrutura esperada das colunas conforme sua imagem: 
-    // [A: Nome] [B: Data do Questionário] [C: Email] [D: Nascimento] [E: Inflamação] [F: Risco Mental]
-    
-    var email = data.email;
+    // Tenta ler os dados de diferentes formas para garantir compatibilidade
+    if (e.postData && e.postData.contents) {
+      data = JSON.parse(e.postData.contents);
+    } else if (e.parameter) {
+      data = e.parameter;
+    } else {
+      throw new Error("Nenhum dado recebido no corpo da requisição.");
+    }
+
+    // Validação básica
+    if (!data.email) {
+      throw new Error("Email não fornecido.");
+    }
+
+    // Lógica de verificação de retorno (Duplicidade)
+    var email = data.email.toString().toLowerCase().trim();
     var tipoRegistro = "Primeiro";
-    var dataFormatada = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy");
+    var dataFormatada = Utilities.formatDate(new Date(), "GMT-3", "dd/MM/yyyy HH:mm");
     
-    // Verifica histórico (lê toda a coluna C para checar duplicação)
     var range = sheet.getDataRange();
     var values = range.getValues();
     
-    // Começa do 1 para pular o cabeçalho
+    // Procura o email na coluna C (índice 2)
     for (var i = 1; i < values.length; i++) {
-      // Verifica se a linha tem dados e se o email bate (case insensitive)
-      if (values[i][2] && values[i][2].toString().toLowerCase() == email.toString().toLowerCase()) { 
+      var rowEmail = values[i][2] ? values[i][2].toString().toLowerCase().trim() : "";
+      if (rowEmail === email) {
         tipoRegistro = "Retorno";
         break;
       }
     }
-    
+
     var statusFinal = tipoRegistro + " - " + dataFormatada;
-    
-    // 4. Salva a nova linha na ordem exata da sua imagem + campos extras úteis
+
+    // Salva os dados
     sheet.appendRow([
-      data.nome,                // Coluna A
-      statusFinal,              // Coluna B (Ex: Primeiro - 17/10/2025)
-      data.email,               // Coluna C
-      data.nascimento,          // Coluna D
-      data.escore_inflamacao,   // Coluna E
-      data.escore_risco_mental, // Coluna F
-      data.telefone,            // Coluna G (Extra: Telefone)
-      new Date()                // Coluna H (Extra: Carimbo de data/hora sistema)
+      data.nome || "Não informado",
+      statusFinal,
+      data.email,
+      data.nascimento || "",
+      data.escore_inflamacao || 0,
+      data.escore_risco_mental || 0,
+      data.telefone || "",
+      new Date() // Timestamp do sistema
     ]);
-    
-    // 5. Retorna sucesso para o site
-    return ContentService.createTextOutput(JSON.stringify({ "status": "sucesso", "mensagem": "Dados salvos" }))
+
+    return ContentService.createTextOutput(JSON.stringify({ "result": "success" }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (error) {
+    // Em caso de erro, tenta salvar o erro na planilha para você ver o que houve
+    try {
+      var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+      sheet.appendRow(["ERRO", error.toString(), new Date()]);
+    } catch(e) {}
+
+    return ContentService.createTextOutput(JSON.stringify({ "result": "error", "error": error.toString() }))
       .setMimeType(ContentService.MimeType.JSON);
       
-  } catch (error) {
-    // Retorna erro se algo falhar
-    return ContentService.createTextOutput(JSON.stringify({ "status": "erro", "mensagem": error.toString() }))
-      .setMimeType(ContentService.MimeType.JSON);
+  } finally {
+    lock.releaseLock();
   }
 }
