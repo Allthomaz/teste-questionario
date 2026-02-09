@@ -1,23 +1,24 @@
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz3vlfUppxkUNldq6qzVlKbKnXUV3hz9mtKwWtrg46bGLhehRYJom1rYwk9-t4BVUbiMw/exec';
+const PROXY_URL = '/api/proxy';
 
 export async function sendDataToSheet(patientData) {
-    if (GOOGLE_SCRIPT_URL.includes('SUA_URL')) {
-        console.warn('URL da API não configurada.');
-        return false;
-    }
-
     try {
-        const response = await fetch(GOOGLE_SCRIPT_URL, {
+        const response = await fetch(PROXY_URL, {
             method: 'POST',
-            mode: 'no-cors',
             headers: {
-                'Content-Type': 'text/plain;charset=utf-8',
+                'Content-Type': 'application/json', // Definir Content-Type para JSON para o proxy
             },
             body: JSON.stringify(patientData)
         });
 
-        console.log('Enviado para planilha. Verifique lá.');
-        return true;
+        // O proxy deve retornar um status indicando sucesso ou falha
+        if (response.ok) {
+            console.log("Dados enviados com sucesso via proxy.");
+            return true;
+        } else {
+            const errorText = await response.text();
+            console.error(`Falha no envio via proxy: ${response.status} - ${errorText}`);
+            return false;
+        }
     } catch (error) {
         console.error('Falha no envio:', error);
         return false;
