@@ -9,7 +9,7 @@ let currentStep = 1;
 const totalSteps = 4;
 
 // ATENÇÃO: Constante solicitada (mas a lógica real de envio está encapsulada em sheetApi.js para manter a organização)
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwdXhbxJFabslfdbc9-MiE3UiKmnQwnRomh62WIUDkGSOlvHoBT3eZW742hYM0shbuJFg/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxgxuM0cpAivKmrGCoP458olgXcuOiagbQTogxtwNMrnQficO26zbrWQXxLC7P_lSeOPA/exec';
 
 // Inicializa o formulário ao carregar a página
 document.addEventListener('DOMContentLoaded', () => {

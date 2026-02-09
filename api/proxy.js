@@ -1,5 +1,5 @@
-// Carrega a URL do Google Script a partir das variáveis de ambiente
-const GOOGLE_SCRIPT_URL = process.env.GOOGLE_SCRIPT_URL;
+// Carrega a URL do Google Script a partir das variáveis de ambiente (ou usa a fornecida como fallback)
+const GOOGLE_SCRIPT_URL = process.env.GOOGLE_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbxgxuM0cpAivKmrGCoP458olgXcuOiagbQTogxtwNMrnQficO26zbrWQXxLC7P_lSeOPA/exec';
 
 export default async function handler(req, res) {
     // 1. Permitir apenas requisições POST
@@ -27,10 +27,24 @@ export default async function handler(req, res) {
         });
 
         // 4. Analisar a resposta do Google Script
-        // O Google Apps Script, ao redirecionar, indica sucesso.
         if (response.ok || response.status === 302) {
+            const responseBody = await response.text();
+            let jsonResponse;
+            try {
+                jsonResponse = JSON.parse(responseBody);
+            } catch (e) {
+                // Se não for JSON, assume sucesso se status for OK (comportamento antigo/redirecionamento)
+                console.log("Proxy: Resposta não-JSON do Google Script, assumindo sucesso baseada no status HTTP.");
+                return res.status(200).json({ success: true });
+            }
+
+            if (jsonResponse.result === 'error') {
+                console.error("Proxy: Google Script retornou erro lógico:", jsonResponse.error);
+                return res.status(500).json({ success: false, error: jsonResponse.error });
+            }
+
             console.log("Proxy: Dados enviados ao Google Script com sucesso.");
-            return res.status(200).json({ success: true });
+            return res.status(200).json({ success: true, data: jsonResponse });
         } else {
             // Se o Google Script retornar um erro real
             const errorText = await response.text();
