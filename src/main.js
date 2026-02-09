@@ -13,6 +13,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwdXhbxJFabslfdbc9-M
 
 // Inicializa o formulário ao carregar a página
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("App initialized v2 - PDF Fix Applied");
     initializeForm();
     updateProgress();
     
