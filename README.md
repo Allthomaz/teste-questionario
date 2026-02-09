@@ -38,13 +38,21 @@
 
 
    1 ├── api/              # Proxy Serverless para evitar erros de CORS
+   
    2 ├── scripts/          # Scripts de automação e código Apps Script
+   
    3 ├── src/
+   
    4 │   ├── services/     # Comunicação com APIs externas
+   
    5 │   ├── dom.js        # Manipulação de interface (UI)
+   
    6 │   ├── logic.js      # Regras de negócio e cálculos
+   
    7 │   └── main.js       # Ponto de entrada da aplicação
+   
    8 ├── tests/            # Testes automatizados (Vitest)
+   
    9 └── index.html        # Estrutura principal
 
 
